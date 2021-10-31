@@ -1,0 +1,26 @@
+<div class="container text-center">
+    <table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Capital City</th>
+            <th>Anthem</th>
+            <th>Spoken languages</th>
+            <th>Flag</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr *ngFor="let country of countries">
+            <td>{{country.id}}</td>
+            <td>{{country.name}}</td>
+            <td>{{country.description}}</td>
+            <td>{{country.capitalCity}}</td>
+            <td>{{country.anthem}}</td>
+            <td>{{country.languages.join(', ')}}</td>
+            <td><img src="{{country.flagUri}}" alt="{{country.name}}" height="25" width="45" /></td>
+        </tr>
+    </tbody>
+    </table>
+</div>
