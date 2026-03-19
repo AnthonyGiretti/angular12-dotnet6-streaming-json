@@ -28,6 +28,15 @@ angular12-dotnet6-streaming-json/
 
 ## How It Works
 
+```
+Angular Frontend  ──── HTTP GET ──►  ASP.NET Core 6 Minimal API
+(oboe.js consumer)                   (IAsyncEnumerable stream)
+       │                                      │
+       │◄── JSON chunks arrive one-by-one ────┘
+       │
+       └── Each country is appended to an HTML table immediately
+```
+
 ### Server-side (back-end)
 
 The endpoint `/stream/countries` is registered with `MapGet` and returns an `IAsyncEnumerable<CountryModel>`.  
