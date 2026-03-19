@@ -11,7 +11,6 @@ A full-stack demo project that showcases **JSON Streaming** between a .NET 6 Min
 - [Project Structure](#project-structure)
 - [How to Run](#how-to-run)
 - [How It Works](#how-it-works)
-- [⚠️ Security Considerations](#️-security-considerations)
 
 ---
 
@@ -126,78 +125,8 @@ npm start
 
 The streaming flow works as follows:
 
-1. The Angular component initializes **oboe.js** pointed at the configured API URL (e.g., `https://localhost:5001/stream/countries` in development — see [Security Issue 2](#-issue-2--hardcoded-localhost-url-in-production-code) for why this should be driven by environment configuration).
+1. The Angular component initializes **oboe.js** pointed at `https://localhost:5001/stream/countries`.
 2. The .NET 6 Minimal API starts yielding `CountryModel` JSON objects one by one using `IAsyncEnumerable<CountryModel>`, with a 500 ms artificial delay between each item.
 3. As each JSON object arrives over the HTTP stream, oboe.js fires a callback (`!.*` pattern matches each array element).
 4. The callback appends the received `CountryModel` to the `countries` array.
 5. Angular's change detection automatically updates the view to display each new country as it arrives.
-
----
-
-## ⚠️ Security Considerations
-
-This project is a **demo only** and contains several security issues that must be addressed before any production use.
-
-### 🔴 Issue 1 — Wildcard CORS Policy
-
-**File**: `back-end/MinimalApiDemo/Program.cs`
-
-```csharp
-builder.Services.AddCors(o => o.AddPolicy("AllowAll", builder =>
-{
-    builder.AllowAnyOrigin()
-           .AllowAnyMethod()
-           .AllowAnyHeader();
-}));
-```
-
-**Problem**: The CORS policy allows **any origin, any method, and any header**. In a production environment this opens the API to cross-origin requests from any website, enabling potential CSRF-like data exfiltration.
-
-**Recommendation**: Restrict `AllowAnyOrigin()` to specific, trusted origins:
-
-```csharp
-builder.WithOrigins("https://your-frontend-domain.com")
-```
-
-> **Note**: The CORS policy is also **registered but never applied** — `app.UseCors("AllowAll")` is missing from the middleware pipeline in `Program.cs`. This means CORS headers are not actually being sent, which would break the Angular front-end in a browser.
-
----
-
-### 🔴 Issue 2 — Hardcoded `localhost` URL in Production Code
-
-**File**: `front-end/src/app/json-streaming/json-streaming.component.ts`
-
-```typescript
-var config = {
-  'url': "https://localhost:5001/stream/countries",
-  ...
-}
-```
-
-**Problem**: The API URL is **hardcoded to `localhost:5001`** directly in the component. This means the application will fail in any non-local environment (staging, production). It also leaks internal infrastructure details.
-
-**Recommendation**: Use Angular's environment files (`environment.ts` / `environment.prod.ts`) to manage the API base URL per environment.
-
----
-
-### 🟡 Issue 3 — `LangVersion=preview` in Production Project File
-
-**File**: `back-end/MinimalApiDemo/MinimalApiDemo.csproj`
-
-**Problem**: Using `<LangVersion>preview</LangVersion>` means the project relies on unstable, unreleased language features. This is fine for demos, but should not be used in production as preview features can change or be removed between previews.
-
-**Recommendation**: Pin to a stable language version (e.g., `<LangVersion>10.0</LangVersion>` for .NET 6).
-
----
-
-### 🟡 Issue 4 — No Authentication or Authorization
-
-**Problem**: The `/stream/countries` endpoint has no authentication or authorization. Any anonymous caller on the network can access it. For a demo this is acceptable, but a production API should protect endpoints with appropriate auth (JWT Bearer, API keys, etc.).
-
----
-
-### 🟡 Issue 5 — Outdated Dependencies (as of 2026)
-
-**Problem**: All dependencies (Angular 12, .NET 6, oboe 2.1.5, Bootstrap 5.1.1, TypeScript 4.3.5) are **significantly outdated**. .NET 6 and Angular 12 have both reached **end-of-life**. Outdated dependencies may have known CVEs and no longer receive security patches.
-
-**Recommendation**: Upgrade to currently supported versions.
