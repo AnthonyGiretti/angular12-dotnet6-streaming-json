@@ -12,6 +12,8 @@ builder.Services.AddCors(o => o.AddPolicy("AllowAll", builder =>
 // Configure and enable middlewares
 var app = builder.Build();
 
+app.UseCors("AllowAll");
+
 app.MapGet("/stream/countries", async () =>
 {
     async IAsyncEnumerable<CountryModel> StreamCountriesAsync()

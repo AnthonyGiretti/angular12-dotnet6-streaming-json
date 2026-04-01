@@ -1,4 +1,4 @@
-# Angular 12 + .NET 6 — JSON Streaming Demo
+# Angular 21 + .NET 10 — JSON Streaming Demo
 
 > **⚠️ This is a sample/demo project. It is NOT intended for production use as-is.**
 > See the [Security Considerations](#security-considerations) section for details.
@@ -15,21 +15,21 @@ The back-end exposes a single endpoint that returns an `IAsyncEnumerable<Country
 
 ```
 angular12-dotnet6-streaming-json/
-├── back-end/   ← ASP.NET Core 6 Minimal API (.NET 6)
-└── front-end/  ← Angular 12 SPA
+├── back-end/   ← ASP.NET Core 10 Minimal API (.NET 10)
+└── front-end/  ← Angular 21 SPA
 ```
 
 | Layer | Technology | Role |
 |---|---|---|
-| Back-end | ASP.NET Core 6 Minimal API | Streams `CountryModel` objects via `IAsyncEnumerable` |
-| Front-end | Angular 12 + oboe.js | Consumes the stream and progressively renders a table |
+| Back-end | ASP.NET Core 10 Minimal API | Streams `CountryModel` objects via `IAsyncEnumerable` |
+| Front-end | Angular 21 + oboe.js | Consumes the stream and progressively renders a table |
 
 ---
 
 ## How It Works
 
 ```
-Angular Frontend  ──── HTTP GET ──►  ASP.NET Core 6 Minimal API
+Angular Frontend  ──── HTTP GET ──►  ASP.NET Core 10 Minimal API
 (oboe.js consumer)                   (IAsyncEnumerable stream)
        │                                      │
        │◄── JSON chunks arrive one-by-one ────┘
@@ -94,24 +94,21 @@ Both layers share the same `CountryModel` shape:
 
 | Item | Version |
 |---|---|
-| .NET / ASP.NET Core | 6.0 (`net6.0`) |
-| C# Language | `preview` (C# 10 features) |
-| Microsoft.OpenApi | `1.3.0-preview` |
-| Swashbuckle.AspNetCore | `6.1.5` |
+| .NET / ASP.NET Core | 10.0 (`net10.0`) |
+| C# Language | 13 (default for .NET 10) |
 
 ### Front-end
 
 | Package | Version |
 |---|---|
-| Angular (core, common, router, forms, …) | `~12.2.0` |
-| Angular CLI | `~12.2.4` |
+| Angular (core, common, router, forms, …) | `~21.2.0` |
+| Angular CLI | `~21.2.0` |
 | oboe (JSON streaming) | `^2.1.5` |
-| Bootstrap | `^5.1.1` |
-| RxJS | `~6.6.0` |
-| TypeScript | `~4.3.5` |
-| Zone.js | `~0.11.4` |
-| google-protobuf | `^3.18.0-rc.2` |
-| Karma / Jasmine (testing) | `~6.3.0` / `~3.8.0` |
+| Bootstrap | `^5.3.0` |
+| RxJS | `~7.8.0` |
+| TypeScript | `~5.9.0` |
+| Zone.js | `~0.16.0` |
+| Karma / Jasmine (testing) | `~6.4.0` / `~6.1.0` |
 
 ---
 
@@ -160,9 +157,9 @@ angular12-dotnet6-streaming-json/
 
 | Tool | Version |
 |---|---|
-| [.NET SDK](https://dotnet.microsoft.com/download) | 6.0 |
-| [Node.js](https://nodejs.org/) | 14.x or 16.x (LTS) |
-| [Angular CLI](https://angular.io/cli) | 12.x (`npm install -g @angular/cli@12`) |
+| [.NET SDK](https://dotnet.microsoft.com/download) | 10.0 |
+| [Node.js](https://nodejs.org/) | 20.x or 22.x (LTS) |
+| [Angular CLI](https://angular.io/cli) | 21.x (`npm install -g @angular/cli@21`) |
 
 ---
 
@@ -213,9 +210,9 @@ builder.Services.AddCors(o => o.AddPolicy("AllowAll", builder =>
 
 There are two problems here:
 - The policy is **overly permissive** — suitable only for a completely public, unauthenticated demo.
-- `app.UseCors("AllowAll")` is **never called**, so the CORS middleware is registered but **not applied**. Any cross-origin request will actually be blocked by default.
+- ~~`app.UseCors("AllowAll")` is **never called**~~ — the `UseCors` call has been added as part of the migration. However, the wildcard policy is still too broad for anything beyond a demo.
 
-**Fix:** Call `app.UseCors("AllowAll")` (or better, replace the wildcard policy with a specific allowed-origins list) before `app.MapGet(...)`.
+**Fix for production:** Replace the wildcard policy with a specific allowed-origins list.
 
 ---
 
@@ -244,16 +241,9 @@ The `/stream/countries` endpoint is completely open — no API keys, no JWT toke
 
 ---
 
-### 4 — Pre-release / preview dependency versions
+### 4 — ~~Pre-release / preview dependency versions~~ (resolved)
 
-Two dependencies use pre-release version identifiers:
-
-| Package | Version | Risk |
-|---|---|---|
-| `Microsoft.OpenApi` | `1.3.0-preview` | May have breaking changes or known bugs not yet fixed in stable |
-| `google-protobuf` | `^3.18.0-rc.2` | RC build; should be replaced with a stable release |
-
-**Fix:** Pin stable, GA releases of all production dependencies.
+The preview/RC packages (`Microsoft.OpenApi 1.3.0-preview`, `google-protobuf ^3.18.0-rc.2`, `Swashbuckle.AspNetCore 6.1.5`) have been removed as part of the migration. All remaining dependencies use stable, GA releases.
 
 ---
 
@@ -269,7 +259,7 @@ Two dependencies use pre-release version identifiers:
 
 The streaming endpoint has no rate-limiting or throttling in place. A single client could open many long-lived connections simultaneously, making it trivially easy to exhaust server resources (a basic denial-of-service vector).
 
-**Fix:** Add rate-limiting middleware using a third-party library such as [`AspNetCoreRateLimit`](https://github.com/stefanprodan/AspNetCoreRateLimit), which supports .NET 6. (The built-in `Microsoft.AspNetCore.RateLimiting` package was introduced in .NET 7 and is not available for this project's target framework.)
+**Fix:** Add rate-limiting middleware using the built-in `Microsoft.AspNetCore.RateLimiting` package (available since .NET 7 and fully supported in .NET 10) by calling `builder.Services.AddRateLimiter(...)` and `app.UseRateLimiter()`, then applying a policy to the endpoint with `.RequireRateLimiting(...)`.
 
 ---
 

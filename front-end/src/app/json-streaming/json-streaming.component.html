@@ -12,7 +12,8 @@
         </tr>
     </thead>
     <tbody>
-        <tr *ngFor="let country of countries">
+        @for (country of countries; track country.id) {
+        <tr>
             <td>{{country.id}}</td>
             <td>{{country.name}}</td>
             <td>{{country.description}}</td>
@@ -21,6 +22,7 @@
             <td>{{country.languages.join(', ')}}</td>
             <td><img src="{{country.flagUri}}" alt="{{country.name}}" height="25" width="45" /></td>
         </tr>
+        }
     </tbody>
     </table>
 </div>
